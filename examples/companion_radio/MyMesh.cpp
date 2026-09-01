@@ -106,19 +106,19 @@
 #define DIRECT_SEND_PERHOP_EXTRA_MILLIS   250
 #define LAZY_CONTACTS_WRITE_DELAY         5000
 
-// Delay between receiving the HELLO application message and transmitting
+// Delay between receiving the DATA application message and transmitting
 // the application-level response.  BaseChatMesh generates the MeshCore
 // transport ACK after onMessageRecv() returns, so this delay ensures the
 // ACK gets priority and the response does not race it.
-#ifndef HELLO_RESPONSE_DELAY_MS
-#define HELLO_RESPONSE_DELAY_MS           500UL
+#ifndef DATA_RESPONSE_DELAY_MS
+#define DATA_RESPONSE_DELAY_MS           500UL
 #endif
 
-// Retry the application-level HELLO response if its MeshCore transport ACK
+// Retry the application-level DATA response if its MeshCore transport ACK
 // is not received. The sequence is: attempt 0, 1, 2 using the stored path,
 // then attempt 3 after resetting the path (forced flood).
-#ifndef HELLO_RESPONSE_RETRY_DELAY_MS
-#define HELLO_RESPONSE_RETRY_DELAY_MS     1000UL
+#ifndef DATA_RESPONSE_RETRY_DELAY_MS
+#define DATA_RESPONSE_RETRY_DELAY_MS     1000UL
 #endif
 
 #define PUBLIC_GROUP_PSK                  "izOH6cXN6mrJ5e26oRXNcg=="
@@ -426,19 +426,19 @@ void MyMesh::onContactPathUpdated(const ContactInfo &contact) {
 }
 
 ContactInfo *MyMesh::processAck(const uint8_t *data) {
-  // First check the ACK belonging to our automatic HELLO response.
+  // First check the ACK belonging to our automatic DATA response.
   // BaseChatMesh::onAckRecv() calls this function and, when we return a
   // non-NULL contact, BaseChatMesh cancels its normal txt_send_timeout.
-  if (hello_response_waiting_for_ack &&
-      hello_response_expected_ack != 0 &&
-      memcmp(data, &hello_response_expected_ack, 4) == 0) {
-    hello_response_waiting_for_ack = false;
-    hello_response_expected_ack = 0;
+  if (data_response_waiting_for_ack &&
+      data_response_expected_ack != 0 &&
+      memcmp(data, &data_response_expected_ack, 4) == 0) {
+    data_response_waiting_for_ack = false;
+    data_response_expected_ack = 0;
 
-    Serial.print("HELLO RESPONSE MESH ACK RECEIVED <- ");
-    Serial.println(hello_response_contact.name);
+    Serial.print("DATA RESPONSE MESH ACK RECEIVED <- ");
+    Serial.println(data_response_contact.name);
 
-    return &hello_response_contact;
+    return &data_response_contact;
   }
 
   // Normal application-generated messages.
@@ -570,7 +570,7 @@ void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t 
   queueMessage(from, TXT_TYPE_PLAIN, pkt, sender_timestamp, NULL, 0, text);
 
   // ---------------------------------------------------------
-  // Automatic response to "hello"
+  // Automatic response to "#DATA#"
   // ---------------------------------------------------------
   // IMPORTANT:
   // BaseChatMesh calls onMessageRecv() BEFORE it constructs/sends
@@ -581,28 +581,28 @@ void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t 
   // response for a short time later.  This allows BaseChatMesh to
   // finish its normal ACK processing first.
   // ---------------------------------------------------------
-  if (text != NULL && strcmp(text, "hello") == 0) {
+  if (text != NULL && strcmp(text, "#DATA#") == 0) {
 
-    // Ignore duplicate HELLOs while a response transaction is already in
+    // Ignore duplicate DATAs while a response transaction is already in
     // progress. This prevents a duplicate packet from resetting our retry
     // state or replacing the contact being serviced.
-    if (hello_response_pending || hello_response_waiting_for_ack) {
-      Serial.print("HELLO RECEIVED WHILE RESPONSE ACTIVE <- ");
+    if (data_response_pending || data_response_waiting_for_ack) {
+      Serial.print("DATA RECEIVED WHILE RESPONSE ACTIVE <- ");
       Serial.println(from.name);
       return;
     }
 
-    hello_response_contact = from;
-    hello_response_pending = true;
-    hello_response_send_after = millis() + HELLO_RESPONSE_DELAY_MS;
-    hello_response_attempt = 0;
-    hello_response_expected_ack = 0;
-    hello_response_waiting_for_ack = false;
+    data_response_contact = from;
+    data_response_pending = true;
+    data_response_send_after = millis() + DATA_RESPONSE_DELAY_MS;
+    data_response_attempt = 0;
+    data_response_expected_ack = 0;
+    data_response_waiting_for_ack = false;
 
-    Serial.print("HELLO RECEIVED <- ");
+    Serial.print("DATA RECEIVED <- ");
     Serial.print(from.name);
     Serial.print(" | delaying response by ");
-    Serial.print(HELLO_RESPONSE_DELAY_MS);
+    Serial.print(DATA_RESPONSE_DELAY_MS);
     Serial.println(" ms so MeshCore ACK goes first");
   }
 }
@@ -939,47 +939,47 @@ uint32_t MyMesh::calcDirectTimeoutMillisFor(uint32_t pkt_airtime_millis, uint8_t
 
 void MyMesh::onSendTimeout() {
   // BaseChatMesh invokes this after the MeshCore transport ACK timeout
-  // expires. Only the automatic HELLO response is handled here.
-  if (!hello_response_waiting_for_ack) {
+  // expires. Only the automatic DATA response is handled here.
+  if (!data_response_waiting_for_ack) {
     return;
   }
 
-  hello_response_waiting_for_ack = false;
-  hello_response_expected_ack = 0;
+  data_response_waiting_for_ack = false;
+  data_response_expected_ack = 0;
 
   Serial.println("--------------------------------");
-  Serial.println("HELLO RESPONSE MESH ACK TIMEOUT");
+  Serial.println("DATA RESPONSE MESH ACK TIMEOUT");
   Serial.print("Contact: ");
-  Serial.println(hello_response_contact.name);
+  Serial.println(data_response_contact.name);
   Serial.print("Failed attempt: ");
-  Serial.println(hello_response_attempt);
+  Serial.println(data_response_attempt);
 
   // Attempts 0, 1 and 2 use the currently stored route.
   // Attempt 3 is the final recovery attempt and is forced to FLOOD.
-  if (hello_response_attempt < 3) {
-    hello_response_attempt++;
+  if (data_response_attempt < 3) {
+    data_response_attempt++;
 
-    if (hello_response_attempt == 3) {
-      ContactInfo *stored = lookupContactByPubKey(hello_response_contact.id.pub_key, PUB_KEY_SIZE);
+    if (data_response_attempt == 3) {
+      ContactInfo *stored = lookupContactByPubKey(data_response_contact.id.pub_key, PUB_KEY_SIZE);
       if (stored) {
         Serial.println("DIRECT RETRIES EXHAUSTED");
         Serial.println("RESETTING STORED PATH -> FINAL FLOOD");
         resetPathTo(*stored);
-        hello_response_contact = *stored;
+        data_response_contact = *stored;
         dirty_contacts_expiry = futureMillis(LAZY_CONTACTS_WRITE_DELAY);
       } else {
         // Keep a safe local copy even if the contact was removed.
-        resetPathTo(hello_response_contact);
+        resetPathTo(data_response_contact);
       }
     } else {
-      Serial.print("RETRYING HELLO RESPONSE USING CURRENT PATH, ATTEMPT = ");
-      Serial.println(hello_response_attempt);
+      Serial.print("RETRYING DATA RESPONSE USING CURRENT PATH, ATTEMPT = ");
+      Serial.println(data_response_attempt);
     }
 
-    hello_response_send_after = millis() + HELLO_RESPONSE_RETRY_DELAY_MS;
-    hello_response_pending = true;
-    Serial.print("SCHEDULING HELLO RESPONSE RETRY IN ");
-    Serial.print(HELLO_RESPONSE_RETRY_DELAY_MS);
+    data_response_send_after = millis() + DATA_RESPONSE_RETRY_DELAY_MS;
+    data_response_pending = true;
+    Serial.print("SCHEDULING DATA RESPONSE RETRY IN ");
+    Serial.print(DATA_RESPONSE_RETRY_DELAY_MS);
     Serial.println(" ms");
     Serial.println("--------------------------------");
     return;
@@ -988,12 +988,12 @@ void MyMesh::onSendTimeout() {
   // Final flood attempt has also timed out. The collector therefore did not
   // receive the application-level response. Nothing more is sent.
   Serial.println("FINAL FLOOD RESPONSE FAILED");
-  Serial.println("HELLO RESPONSE DELIVERY FAILED");
+  Serial.println("DATA RESPONSE DELIVERY FAILED");
   Serial.println("--------------------------------");
 
-  hello_response_attempt = 0;
-  hello_response_send_after = 0;
-  hello_response_pending = false;
+  data_response_attempt = 0;
+  data_response_send_after = 0;
+  data_response_pending = false;
 }
 
 MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMeshTables &tables,
@@ -1004,12 +1004,12 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
   _cli_rescue = false;
   offline_queue_len = 0;
 
-  hello_response_pending = false;
-  hello_response_send_after = 0;
-  memset(&hello_response_contact, 0, sizeof(hello_response_contact));
-  hello_response_attempt = 0;
-  hello_response_expected_ack = 0;
-  hello_response_waiting_for_ack = false;
+  data_response_pending = false;
+  data_response_send_after = 0;
+  memset(&data_response_contact, 0, sizeof(data_response_contact));
+  data_response_attempt = 0;
+  data_response_expected_ack = 0;
+  data_response_waiting_for_ack = false;
 
   app_target_ver = 0;
   clearPendingReqs();
@@ -2397,12 +2397,12 @@ void MyMesh::loop() {
   BaseChatMesh::loop();
 
   // ---------------------------------------------------------
-  // Send the application-level HELLO response only after the
+  // Send the application-level DATA response only after the
   // transport ACK has had time to be queued/transmitted.
   // ---------------------------------------------------------
-  if (hello_response_pending && millisHasNowPassed(hello_response_send_after)) {
-    hello_response_pending = false;
-    hello_response_send_after = 0;
+  if (data_response_pending && millisHasNowPassed(data_response_send_after)) {
+    data_response_pending = false;
+    data_response_send_after = 0;
 
     char pub_key_hex[7];
     mesh::Utils::toHex(pub_key_hex, self_id.pub_key, 3);
@@ -2411,47 +2411,47 @@ void MyMesh::loop() {
     snprintf(response, sizeof(response), "received %s %s", getNodeName(), pub_key_hex);
 
     // Refresh the contact from the live contact table immediately before
-    // every attempt. This is important when the incoming HELLO was flood
+    // every attempt. This is important when the incoming DATA was flood
     // routed: its reciprocal path may have been learned after onMessageRecv()
     // returned but before our delayed response is transmitted.
-    ContactInfo *stored_contact = lookupContactByPubKey(hello_response_contact.id.pub_key, PUB_KEY_SIZE);
+    ContactInfo *stored_contact = lookupContactByPubKey(data_response_contact.id.pub_key, PUB_KEY_SIZE);
     if (stored_contact) {
-      hello_response_contact = *stored_contact;
+      data_response_contact = *stored_contact;
     }
 
     uint32_t response_timestamp = getRTCClock()->getCurrentTimeUnique();
     uint32_t expected_ack = 0;
     uint32_t est_timeout = 0;
 
-    Serial.print("HELLO RESPONSE TX -> ");
-    Serial.print(hello_response_contact.name);
+    Serial.print("DATA RESPONSE TX -> ");
+    Serial.print(data_response_contact.name);
     Serial.print(" | ATTEMPT=");
-    Serial.println(hello_response_attempt);
+    Serial.println(data_response_attempt);
 
-    int result = sendMessage(hello_response_contact, response_timestamp,
-                             hello_response_attempt, response,
+    int result = sendMessage(data_response_contact, response_timestamp,
+                             data_response_attempt, response,
                              expected_ack, est_timeout);
 
     if (result == MSG_SEND_FAILED) {
       // Treat a local send failure like a transport timeout so the same
       // retry/flood sequence is used.
-      hello_response_waiting_for_ack = true;
-      hello_response_expected_ack = 0;
-      Serial.println("HELLO RESPONSE: LOCAL SEND FAILED");
+      data_response_waiting_for_ack = true;
+      data_response_expected_ack = 0;
+      Serial.println("DATA RESPONSE: LOCAL SEND FAILED");
       onSendTimeout();
     } else {
-      hello_response_expected_ack = expected_ack;
-      hello_response_waiting_for_ack = (expected_ack != 0);
+      data_response_expected_ack = expected_ack;
+      data_response_waiting_for_ack = (expected_ack != 0);
 
       if (result == MSG_SEND_SENT_FLOOD) {
-        MESH_DEBUG_PRINTLN("HELLO RESPONSE: FLOOD -> %s : %s",
-                           hello_response_contact.name, response);
+        MESH_DEBUG_PRINTLN("DATA RESPONSE: FLOOD -> %s : %s",
+                           data_response_contact.name, response);
       } else if (result == MSG_SEND_SENT_DIRECT) {
-        MESH_DEBUG_PRINTLN("HELLO RESPONSE: DIRECT -> %s : %s",
-                           hello_response_contact.name, response);
+        MESH_DEBUG_PRINTLN("DATA RESPONSE: DIRECT -> %s : %s",
+                           data_response_contact.name, response);
       }
 
-      Serial.print("HELLO RESPONSE WAITING FOR MESH ACK, TIMEOUT=");
+      Serial.print("DATA RESPONSE WAITING FOR MESH ACK, TIMEOUT=");
       Serial.print(est_timeout);
       Serial.println(" ms");
     }
