@@ -3,122 +3,126 @@
 #include <Arduino.h> // needed for PlatformIO
 #include <Mesh.h>
 
-#define CMD_APP_START                     1
-#define CMD_SEND_TXT_MSG                  2
-#define CMD_SEND_CHANNEL_TXT_MSG          3
-#define CMD_GET_CONTACTS                  4 // with optional 'since' (for efficient sync)
-#define CMD_GET_DEVICE_TIME               5
-#define CMD_SET_DEVICE_TIME               6
-#define CMD_SEND_SELF_ADVERT              7
-#define CMD_SET_ADVERT_NAME               8
-#define CMD_ADD_UPDATE_CONTACT            9
-#define CMD_SYNC_NEXT_MESSAGE             10
-#define CMD_SET_RADIO_PARAMS              11
-#define CMD_SET_RADIO_TX_POWER            12
-#define CMD_RESET_PATH                    13
-#define CMD_SET_ADVERT_LATLON             14
-#define CMD_REMOVE_CONTACT                15
-#define CMD_SHARE_CONTACT                 16
-#define CMD_EXPORT_CONTACT                17
-#define CMD_IMPORT_CONTACT                18
-#define CMD_REBOOT                        19
-#define CMD_GET_BATT_AND_STORAGE          20 // was CMD_GET_BATTERY_VOLTAGE
-#define CMD_SET_TUNING_PARAMS             21
-#define CMD_DEVICE_QUERY                  22
-#define CMD_EXPORT_PRIVATE_KEY            23
-#define CMD_IMPORT_PRIVATE_KEY            24
-#define CMD_SEND_RAW_DATA                 25
-#define CMD_SEND_LOGIN                    26
-#define CMD_SEND_STATUS_REQ               27
-#define CMD_HAS_CONNECTION                28
-#define CMD_LOGOUT                        29 // 'Disconnect'
-#define CMD_GET_CONTACT_BY_KEY            30
-#define CMD_GET_CHANNEL                   31
-#define CMD_SET_CHANNEL                   32
-#define CMD_SIGN_START                    33
-#define CMD_SIGN_DATA                     34
-#define CMD_SIGN_FINISH                   35
-#define CMD_SEND_TRACE_PATH               36
-#define CMD_SET_DEVICE_PIN                37
-#define CMD_SET_OTHER_PARAMS              38
-#define CMD_SEND_TELEMETRY_REQ            39 // can deprecate this
-#define CMD_GET_CUSTOM_VARS               40
-#define CMD_SET_CUSTOM_VAR                41
-#define CMD_GET_ADVERT_PATH               42
-#define CMD_GET_TUNING_PARAMS             43
+#define CMD_APP_START                   1
+#define CMD_SEND_TXT_MSG                2
+#define CMD_SEND_CHANNEL_TXT_MSG        3
+#define CMD_GET_CONTACTS                4 // with optional 'since' (for efficient sync)
+#define CMD_GET_DEVICE_TIME             5
+#define CMD_SET_DEVICE_TIME             6
+#define CMD_SEND_SELF_ADVERT            7
+#define CMD_SET_ADVERT_NAME             8
+#define CMD_ADD_UPDATE_CONTACT          9
+#define CMD_SYNC_NEXT_MESSAGE           10
+#define CMD_SET_RADIO_PARAMS            11
+#define CMD_SET_RADIO_TX_POWER          12
+#define CMD_RESET_PATH                  13
+#define CMD_SET_ADVERT_LATLON           14
+#define CMD_REMOVE_CONTACT              15
+#define CMD_SHARE_CONTACT               16
+#define CMD_EXPORT_CONTACT              17
+#define CMD_IMPORT_CONTACT              18
+#define CMD_REBOOT                      19
+#define CMD_GET_BATT_AND_STORAGE        20 // was CMD_GET_BATTERY_VOLTAGE
+#define CMD_SET_TUNING_PARAMS           21
+#define CMD_DEVICE_QUERY                22
+#define CMD_EXPORT_PRIVATE_KEY          23
+#define CMD_IMPORT_PRIVATE_KEY          24
+#define CMD_SEND_RAW_DATA               25
+#define CMD_SEND_LOGIN                  26
+#define CMD_SEND_STATUS_REQ             27
+#define CMD_HAS_CONNECTION              28
+#define CMD_LOGOUT                      29 // 'Disconnect'
+#define CMD_GET_CONTACT_BY_KEY          30
+#define CMD_GET_CHANNEL                 31
+#define CMD_SET_CHANNEL                 32
+#define CMD_SIGN_START                  33
+#define CMD_SIGN_DATA                   34
+#define CMD_SIGN_FINISH                 35
+#define CMD_SEND_TRACE_PATH             36
+#define CMD_SET_DEVICE_PIN              37
+#define CMD_SET_OTHER_PARAMS            38
+#define CMD_SEND_TELEMETRY_REQ          39 // can deprecate this
+#define CMD_GET_CUSTOM_VARS             40
+#define CMD_SET_CUSTOM_VAR              41
+#define CMD_GET_ADVERT_PATH             42
+#define CMD_GET_TUNING_PARAMS           43
 // NOTE: CMD range 44..49 parked, potentially for WiFi operations
-#define CMD_SEND_BINARY_REQ               50
-#define CMD_FACTORY_RESET                 51
-#define CMD_SEND_PATH_DISCOVERY_REQ       52
-#define CMD_SET_FLOOD_SCOPE_KEY           54 // v8+
-#define CMD_SEND_CONTROL_DATA             55 // v8+
-#define CMD_GET_STATS                     56 // v8+, second byte is stats type
-#define CMD_SEND_ANON_REQ                 57
-#define CMD_SET_AUTOADD_CONFIG            58
-#define CMD_GET_AUTOADD_CONFIG            59
-#define CMD_GET_ALLOWED_REPEAT_FREQ       60
-#define CMD_SET_PATH_HASH_MODE            61
-#define CMD_SEND_CHANNEL_DATA             62
-#define CMD_SET_DEFAULT_FLOOD_SCOPE       63
-#define CMD_GET_DEFAULT_FLOOD_SCOPE       64
-#define CMD_SEND_RAW_PACKET               65
+#define CMD_SEND_BINARY_REQ             50
+#define CMD_FACTORY_RESET               51
+#define CMD_SEND_PATH_DISCOVERY_REQ     52
+#define CMD_SET_FLOOD_SCOPE_KEY         54 // v8+
+#define CMD_SEND_CONTROL_DATA           55 // v8+
+#define CMD_GET_STATS                   56 // v8+, second byte is stats type
+#define CMD_SEND_ANON_REQ               57
+#define CMD_SET_AUTOADD_CONFIG          58
+#define CMD_GET_AUTOADD_CONFIG          59
+#define CMD_GET_ALLOWED_REPEAT_FREQ     60
+#define CMD_SET_PATH_HASH_MODE          61
+#define CMD_SEND_CHANNEL_DATA           62
+#define CMD_SET_DEFAULT_FLOOD_SCOPE     63
+#define CMD_GET_DEFAULT_FLOOD_SCOPE     64
+#define CMD_SEND_RAW_PACKET             65
 
 // Stats sub-types for CMD_GET_STATS
-#define STATS_TYPE_CORE                   0
-#define STATS_TYPE_RADIO                  1
-#define STATS_TYPE_PACKETS                2
+#define STATS_TYPE_CORE                 0
+#define STATS_TYPE_RADIO                1
+#define STATS_TYPE_PACKETS              2
 
-#define RESP_CODE_OK                      0
-#define RESP_CODE_ERR                     1
-#define RESP_CODE_CONTACTS_START          2  // first reply to CMD_GET_CONTACTS
-#define RESP_CODE_CONTACT                 3  // multiple of these (after CMD_GET_CONTACTS)
-#define RESP_CODE_END_OF_CONTACTS         4  // last reply to CMD_GET_CONTACTS
-#define RESP_CODE_SELF_INFO               5  // reply to CMD_APP_START
-#define RESP_CODE_SENT                    6  // reply to CMD_SEND_TXT_MSG
-#define RESP_CODE_CONTACT_MSG_RECV        7  // a reply to CMD_SYNC_NEXT_MESSAGE (ver < 3)
-#define RESP_CODE_CHANNEL_MSG_RECV        8  // a reply to CMD_SYNC_NEXT_MESSAGE (ver < 3)
-#define RESP_CODE_CURR_TIME               9  // a reply to CMD_GET_DEVICE_TIME
-#define RESP_CODE_NO_MORE_MESSAGES        10 // a reply to CMD_SYNC_NEXT_MESSAGE
-#define RESP_CODE_EXPORT_CONTACT          11
-#define RESP_CODE_BATT_AND_STORAGE        12 // a reply to a CMD_GET_BATT_AND_STORAGE
-#define RESP_CODE_DEVICE_INFO             13 // a reply to CMD_DEVICE_QUERY
-#define RESP_CODE_PRIVATE_KEY             14 // a reply to CMD_EXPORT_PRIVATE_KEY
-#define RESP_CODE_DISABLED                15
-#define RESP_CODE_CONTACT_MSG_RECV_V3     16 // a reply to CMD_SYNC_NEXT_MESSAGE (ver >= 3)
-#define RESP_CODE_CHANNEL_MSG_RECV_V3     17 // a reply to CMD_SYNC_NEXT_MESSAGE (ver >= 3)
-#define RESP_CODE_CHANNEL_INFO            18 // a reply to CMD_GET_CHANNEL
-#define RESP_CODE_SIGN_START              19
-#define RESP_CODE_SIGNATURE               20
-#define RESP_CODE_CUSTOM_VARS             21
-#define RESP_CODE_ADVERT_PATH             22
-#define RESP_CODE_TUNING_PARAMS           23
-#define RESP_CODE_STATS                   24 // v8+, second byte is stats type
-#define RESP_CODE_AUTOADD_CONFIG          25
-#define RESP_ALLOWED_REPEAT_FREQ          26
-#define RESP_CODE_CHANNEL_DATA_RECV       27
-#define RESP_CODE_DEFAULT_FLOOD_SCOPE     28
+#define RESP_CODE_OK                    0
+#define RESP_CODE_ERR                   1
+#define RESP_CODE_CONTACTS_START        2  // first reply to CMD_GET_CONTACTS
+#define RESP_CODE_CONTACT               3  // multiple of these (after CMD_GET_CONTACTS)
+#define RESP_CODE_END_OF_CONTACTS       4  // last reply to CMD_GET_CONTACTS
+#define RESP_CODE_SELF_INFO             5  // reply to CMD_APP_START
+#define RESP_CODE_SENT                  6  // reply to CMD_SEND_TXT_MSG
+#define RESP_CODE_CONTACT_MSG_RECV      7  // a reply to CMD_SYNC_NEXT_MESSAGE (ver < 3)
+#define RESP_CODE_CHANNEL_MSG_RECV      8  // a reply to CMD_SYNC_NEXT_MESSAGE (ver < 3)
+#define RESP_CODE_CURR_TIME             9  // a reply to CMD_GET_DEVICE_TIME
+#define RESP_CODE_NO_MORE_MESSAGES      10 // a reply to CMD_SYNC_NEXT_MESSAGE
+#define RESP_CODE_EXPORT_CONTACT        11
+#define RESP_CODE_BATT_AND_STORAGE      12 // a reply to a CMD_GET_BATT_AND_STORAGE
+#define RESP_CODE_DEVICE_INFO           13 // a reply to CMD_DEVICE_QUERY
+#define RESP_CODE_PRIVATE_KEY           14 // a reply to CMD_EXPORT_PRIVATE_KEY
+#define RESP_CODE_DISABLED              15
+#define RESP_CODE_CONTACT_MSG_RECV_V3   16 // a reply to CMD_SYNC_NEXT_MESSAGE (ver >= 3)
+#define RESP_CODE_CHANNEL_MSG_RECV_V3   17 // a reply to CMD_SYNC_NEXT_MESSAGE (ver >= 3)
+#define RESP_CODE_CHANNEL_INFO          18 // a reply to CMD_GET_CHANNEL
+#define RESP_CODE_SIGN_START            19
+#define RESP_CODE_SIGNATURE             20
+#define RESP_CODE_CUSTOM_VARS           21
+#define RESP_CODE_ADVERT_PATH           22
+#define RESP_CODE_TUNING_PARAMS         23
+#define RESP_CODE_STATS                 24 // v8+, second byte is stats type
+#define RESP_CODE_AUTOADD_CONFIG        25
+#define RESP_ALLOWED_REPEAT_FREQ        26
+#define RESP_CODE_CHANNEL_DATA_RECV     27
+#define RESP_CODE_DEFAULT_FLOOD_SCOPE   28
 
-#define MAX_CHANNEL_DATA_LENGTH           (MAX_FRAME_SIZE - 9)
+#define MAX_CHANNEL_DATA_LENGTH         (MAX_FRAME_SIZE - 9)
 
-#define SEND_TIMEOUT_BASE_MILLIS          500
-#define FLOOD_SEND_TIMEOUT_FACTOR         16.0f
-#define DIRECT_SEND_PERHOP_FACTOR         6.0f
-#define DIRECT_SEND_PERHOP_EXTRA_MILLIS   250
-#define LAZY_CONTACTS_WRITE_DELAY         5000
+#define SEND_TIMEOUT_BASE_MILLIS        500
+#define FLOOD_SEND_TIMEOUT_FACTOR       16.0f
+#define DIRECT_SEND_PERHOP_FACTOR       6.0f
+#define DIRECT_SEND_PERHOP_EXTRA_MILLIS 250
+#define LAZY_CONTACTS_WRITE_DELAY       5000
 
 // Delay between receiving the DATA application message and transmitting
 // the application-level response.  BaseChatMesh generates the MeshCore
 // transport ACK after onMessageRecv() returns, so this delay ensures the
 // ACK gets priority and the response does not race it.
 #ifndef DATA_RESPONSE_DELAY_MS
-#define DATA_RESPONSE_DELAY_MS           500UL
+#define DATA_RESPONSE_DELAY_MS 500UL
 #endif
+
+// Server-supplied schedule received with the DATA command.
+static char sensor_schedule_time[32] = { 0 };
+static char sensor_next_wake[32] = { 0 };
 
 // Retry the application-level DATA response if its MeshCore transport ACK
 // is not received. The sequence is: attempt 0, 1, 2 using the stored path,
 // then attempt 3 after resetting the path (forced flood).
 #ifndef DATA_RESPONSE_RETRY_DELAY_MS
-#define DATA_RESPONSE_RETRY_DELAY_MS     1000UL
+#define DATA_RESPONSE_RETRY_DELAY_MS 1000UL
 #endif
 
 #define PUBLIC_GROUP_PSK                  "izOH6cXN6mrJ5e26oRXNcg=="
@@ -429,8 +433,7 @@ ContactInfo *MyMesh::processAck(const uint8_t *data) {
   // First check the ACK belonging to our automatic DATA response.
   // BaseChatMesh::onAckRecv() calls this function and, when we return a
   // non-NULL contact, BaseChatMesh cancels its normal txt_send_timeout.
-  if (data_response_waiting_for_ack &&
-      data_response_expected_ack != 0 &&
+  if (data_response_waiting_for_ack && data_response_expected_ack != 0 &&
       memcmp(data, &data_response_expected_ack, 4) == 0) {
     data_response_waiting_for_ack = false;
     data_response_expected_ack = 0;
@@ -570,40 +573,81 @@ void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t 
   queueMessage(from, TXT_TYPE_PLAIN, pkt, sender_timestamp, NULL, 0, text);
 
   // ---------------------------------------------------------
-  // Automatic response to "#DATA#"
+  // Automatic response to the server JSON DATA command
   // ---------------------------------------------------------
-  // IMPORTANT:
-  // BaseChatMesh calls onMessageRecv() BEFORE it constructs/sends
-  // the MeshCore transport ACK for the received message.
-  // Therefore we must NOT call sendMessage() here.
+  // Expected message:
+  // {"time":"09:55:00","next_wake":"10:00:00","command":"DATA"}
   //
-  // Instead, remember the sender and schedule the application-level
-  // response for a short time later.  This allows BaseChatMesh to
-  // finish its normal ACK processing first.
+  // BaseChatMesh calls onMessageRecv() BEFORE it constructs/sends
+  // the MeshCore transport ACK for the received message. Therefore we
+  // only record the request here and send the application response
+  // later from loop().
   // ---------------------------------------------------------
-  if (text != NULL && strcmp(text, "#DATA#") == 0) {
+  if (text != NULL) {
+    const char *command_tag = "\"command\":\"";
+    const char *time_tag = "\"time\":\"";
+    const char *wake_tag = "\"next_wake\":\"";
 
-    // Ignore duplicate DATAs while a response transaction is already in
-    // progress. This prevents a duplicate packet from resetting our retry
-    // state or replacing the contact being serviced.
-    if (data_response_pending || data_response_waiting_for_ack) {
-      Serial.print("DATA RECEIVED WHILE RESPONSE ACTIVE <- ");
-      Serial.println(from.name);
-      return;
+    const char *command_start = strstr(text, command_tag);
+    const char *time_start = strstr(text, time_tag);
+    const char *wake_start = strstr(text, wake_tag);
+
+    bool is_data_command = false;
+
+    if (command_start != NULL) {
+      command_start += strlen(command_tag);
+      is_data_command = (strncmp(command_start, "DATA\"", 5) == 0);
     }
 
-    data_response_contact = from;
-    data_response_pending = true;
-    data_response_send_after = millis() + DATA_RESPONSE_DELAY_MS;
-    data_response_attempt = 0;
-    data_response_expected_ack = 0;
-    data_response_waiting_for_ack = false;
+    if (is_data_command && time_start != NULL && wake_start != NULL) {
+      time_start += strlen(time_tag);
+      wake_start += strlen(wake_tag);
 
-    Serial.print("DATA RECEIVED <- ");
-    Serial.print(from.name);
-    Serial.print(" | delaying response by ");
-    Serial.print(DATA_RESPONSE_DELAY_MS);
-    Serial.println(" ms so MeshCore ACK goes first");
+      const char *time_end = strchr(time_start, '\"');
+      const char *wake_end = strchr(wake_start, '\"');
+
+      if (time_end != NULL && wake_end != NULL) {
+        size_t time_len = time_end - time_start;
+        size_t wake_len = wake_end - wake_start;
+
+        if (time_len < sizeof(sensor_schedule_time) && wake_len < sizeof(sensor_next_wake)) {
+          memcpy(sensor_schedule_time, time_start, time_len);
+          sensor_schedule_time[time_len] = '\0';
+
+          memcpy(sensor_next_wake, wake_start, wake_len);
+          sensor_next_wake[wake_len] = '\0';
+
+          Serial.println("================================");
+          Serial.print("DATA COMMAND RECEIVED <- ");
+          Serial.println(from.name);
+          Serial.print("TIME      : ");
+          Serial.println(sensor_schedule_time);
+          Serial.print("NEXT WAKE : ");
+          Serial.println(sensor_next_wake);
+          Serial.println("COMMAND   : DATA");
+          Serial.println("================================");
+
+          // Ignore duplicate DATA requests while a response transaction
+          // is already in progress.
+          if (data_response_pending || data_response_waiting_for_ack) {
+            Serial.print("DATA RECEIVED WHILE RESPONSE ACTIVE <- ");
+            Serial.println(from.name);
+            return;
+          }
+
+          data_response_contact = from;
+          data_response_pending = true;
+          data_response_send_after = millis() + DATA_RESPONSE_DELAY_MS;
+          data_response_attempt = 0;
+          data_response_expected_ack = 0;
+          data_response_waiting_for_ack = false;
+
+          Serial.print("DATA REQUEST ACCEPTED | delaying response by ");
+          Serial.print(DATA_RESPONSE_DELAY_MS);
+          Serial.println(" ms so MeshCore ACK goes first");
+        }
+      }
+    }
   }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2407,8 +2451,12 @@ void MyMesh::loop() {
     char pub_key_hex[7];
     mesh::Utils::toHex(pub_key_hex, self_id.pub_key, 3);
 
-    char response[50];
-    snprintf(response, sizeof(response), "received %s %s", getNodeName(), pub_key_hex);
+    int random_value = random(0, 101);
+
+    char response[100];
+
+    snprintf(response, sizeof(response), "{\"SLOC\":\"%s\",\"PUBKEY\":\"%s\",\"STYPE\":\"RG\",\"DATA\":%d}",
+             getNodeName(), pub_key_hex, random_value);
 
     // Refresh the contact from the live contact table immediately before
     // every attempt. This is important when the incoming DATA was flood
@@ -2428,8 +2476,7 @@ void MyMesh::loop() {
     Serial.print(" | ATTEMPT=");
     Serial.println(data_response_attempt);
 
-    int result = sendMessage(data_response_contact, response_timestamp,
-                             data_response_attempt, response,
+    int result = sendMessage(data_response_contact, response_timestamp, data_response_attempt, response,
                              expected_ack, est_timeout);
 
     if (result == MSG_SEND_FAILED) {
@@ -2444,11 +2491,9 @@ void MyMesh::loop() {
       data_response_waiting_for_ack = (expected_ack != 0);
 
       if (result == MSG_SEND_SENT_FLOOD) {
-        MESH_DEBUG_PRINTLN("DATA RESPONSE: FLOOD -> %s : %s",
-                           data_response_contact.name, response);
+        MESH_DEBUG_PRINTLN("DATA RESPONSE: FLOOD -> %s : %s", data_response_contact.name, response);
       } else if (result == MSG_SEND_SENT_DIRECT) {
-        MESH_DEBUG_PRINTLN("DATA RESPONSE: DIRECT -> %s : %s",
-                           data_response_contact.name, response);
+        MESH_DEBUG_PRINTLN("DATA RESPONSE: DIRECT -> %s : %s", data_response_contact.name, response);
       }
 
       Serial.print("DATA RESPONSE WAITING FOR MESH ACK, TIMEOUT=");
@@ -2491,5 +2536,11 @@ bool MyMesh::advert() {
 
 // To check if there is pending work
 bool MyMesh::hasPendingWork() const {
-  return _mgr->getOutboundTotal() > 0 || dirty_contacts_expiry != 0;
+  // Keep the nRF52 awake while the automatic DATA response transaction
+  // is still in progress. Once the MeshCore ACK is received (or all
+  // retries are exhausted), these flags become false and main.cpp can
+  // call board.sleep(0). The nRF52 then sleeps and the LoRa receiver
+  // remains available to wake it when the next packet arrives.
+  return _mgr->getOutboundTotal() > 0 || dirty_contacts_expiry != 0 || data_response_pending ||
+         data_response_waiting_for_ack;
 }
